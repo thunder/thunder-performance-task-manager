@@ -1,0 +1,15 @@
+[Unit]
+Description=Thunder PTM Worker
+After=network.target
+
+[Service]
+Restart=always
+User=ubuntu
+Group=ubuntu
+Environment=NODE_ENV=production
+Environment=NODE_VERSION=node
+WorkingDirectory=/home/ubuntu/thunder-ptm
+ExecStart=/home/ubuntu/.nvm/nvm-exec npm run worker
+
+[Install]
+WantedBy=multi-user.target

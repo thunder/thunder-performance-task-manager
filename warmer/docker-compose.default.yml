@@ -1,0 +1,31 @@
+version: "3.3"
+
+services:
+  db:
+    image: "mysql:5.7"
+    container_name: "db-${BRANCH_TAG}"
+    environment:
+      MYSQL_ROOT_PASSWORD: "root"
+      MYSQL_DATABASE: "thunder"
+      MYSQL_USER: "thunder"
+      MYSQL_PASSWORD: "thunder"
+    command: ["--secure-file-priv=/tmp", "--datadir=/var/lib/mysql-db"]
+    volumes:
+      - "tmp-dir:/tmp"
+  chrome:
+    image: "selenium/standalone-chrome:3.141.59-oxygen"
+  thunder-php:
+    image: "${THUNDER_PERFORMANCE_IMAGE_NAME}"
+    container_name: "thunder-php-${BRANCH_TAG}"
+    environment:
+      DB_HOST: "db"
+      CHROME_HOST: "chrome"
+      THUNDER_HOST: "thunder-php"
+      ELASTIC_APM_CONTEXT_TAG_BRANCH: "${BRANCH_TAG}"
+      ELASTIC_APM_URL: "${ELASTIC_APM_URL}"
+    ports:
+      - "8080:8080"
+    volumes:
+      - "tmp-dir:/tmp"
+volumes:
+  tmp-dir:

@@ -1,13 +1,12 @@
 {
-  "name": "thunder_performance_queue",
-  "version": "0.0.1",
-  "description": "The queue for Thunder performance tasks",
-  "main": "index.js",
+  "name": "thunder-performance-task-manager",
+  "version": "0.1.0",
+  "description": "The Thunder performance task manager",
   "scripts": {
     "service": "node app.js",
     "worker": "node worker.js"
   },
-  "author": "",
+  "author": "Mladen Todorovic <mladen.todorovic@burda.com>",
   "license": "GPL-2.0-or-later",
   "dependencies": {
     "beanstalkd": "^2.2.2",

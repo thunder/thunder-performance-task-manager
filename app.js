@@ -3,23 +3,21 @@ var fs = require("fs");
 const https = require("https");
 const passport = require("passport");
 
-const { body: validateBody, validationResult } = require("express-validator");
-const { default: BeanstalkdClient } = require("beanstalkd");
+const { body: validationResult } = require("express-validator");
 const { Strategy: BearerStrategy } = require("passport-http-bearer");
+
+// Routes definitions
+const warmersRouter = require("./routes/warmers");
+const runnersRouter = require("./routes/runners");
 
 // Get .env configuration
 require("dotenv").config();
 
-// Get config.json
-const { config } = require("./config");
-
-// Create express application
+// Create express application with parsing of JSON bodies
 const app = express();
-
-// Parse JSON bodies (as sent by API clients)
 app.use(express.json());
 
-// We will use single Bearer token from .env
+// We will use single Bearer token from .env for all routes
 passport.use(
   new BearerStrategy(function(token, done) {
     if (
@@ -39,154 +37,44 @@ passport.use(
     done(null, false);
   })
 );
+app.all("*", passport.authenticate("bearer", { session: false }));
+
+// Validation errors handler
+const validationErrorHandler = (req, res, next) => {
+  const errors = validationResult(req);
+
+  if (!errors.isEmpty()) {
+    return res.status(422).json({ errors: errors.array() });
+  }
+
+  next();
+};
 
 // To create warmup task we need following information:
 // branchTag - the branch tag used to separate runs
 // imageTag - the docker image tag of "burda/thunder-performance" docker
 // composeType - the docker composer file type that should be used
 app.post(
-  "/add/warmup",
-  // Authentication
-  passport.authenticate("bearer", { session: false }),
+  "/warmers",
   // Validation and escaping
-  [
-    validateBody("branchTag")
-      .not()
-      .isEmpty()
-      .trim()
-      .escape(),
-    validateBody("imageTag")
-      .not()
-      .isEmpty()
-      .trim()
-      .escape(),
-    validateBody("composeType")
-      .not()
-      .isEmpty()
-      .trim()
-      .custom(value => {
-        if (!["default"].includes(value)) {
-          return Promise.reject("Provided composeType is not supported.");
-        }
-
-        return true;
-      })
-      .escape()
-  ],
+  warmersRouter.validations,
   // Handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
-    next();
-  },
+  validationErrorHandler,
   // Process request
-  (req, res) => {
-    // Use provided values.
-    let { branchTag, imageTag, composeType } = req.body;
-
-    // Create connection and add job.
-    const bs = new BeanstalkdClient(
-      process.env.BEANSTALKD_LISTEN,
-      process.env.BEANSTALKD_PORT
-    );
-
-    bs.connect()
-      .then(() => {
-        return bs.use(config.beanstalk.tube);
-      })
-      .then(() => {
-        const jobData = JSON.stringify({
-          type: "warmup",
-          branchTag,
-          imageTag,
-          composeType
-        });
-
-        console.log(`Added queue with data: ${jobData}`);
-        return bs.put(config.queue.priority.warmer, 1, 1800, jobData);
-      })
-      .then(jobId => {
-        res.json({ jobId, branchTag, imageTag, composeType });
-      })
-      .finally(() => {
-        bs.quit();
-      });
-  }
+  warmersRouter.postHandler
 );
 
 // To create run task we need following information:
 // branchTag - the branch tag used to separate runs
 // composeType - the docker composer file type that should be used
 app.post(
-  "/add/run",
-  // Authentication
-  passport.authenticate("bearer", { session: false }),
+  "/runners",
   // Validation and escaping
-  [
-    validateBody("branchTag")
-      .not()
-      .isEmpty()
-      .trim()
-      .escape(),
-    validateBody("composeType")
-      .not()
-      .isEmpty()
-      .trim()
-      .custom(value => {
-        if (!["default"].includes(value)) {
-          return Promise.reject("Provided composeType is not supported.");
-        }
-
-        return true;
-      })
-      .escape()
-  ],
+  runnersRouter.validations,
   // Handle validation errors
-  (req, res, next) => {
-    const errors = validationResult(req);
-
-    if (!errors.isEmpty()) {
-      return res.status(422).json({ errors: errors.array() });
-    }
-
-    next();
-  },
+  validationErrorHandler,
   // Process request
-  (req, res) => {
-    // Use provided values.
-    let { branchTag, composeType } = req.body;
-
-    // Create connection and add job.
-    const bs = new BeanstalkdClient(
-      process.env.BEANSTALKD_LISTEN,
-      process.env.BEANSTALKD_PORT
-    );
-
-    bs.connect()
-      .then(() => {
-        return bs.use(config.beanstalk.tube);
-      })
-      .then(() => {
-        const jobData = JSON.stringify({
-          type: "run",
-          branchTag,
-          composeType
-        });
-
-        console.log(`Added queue with data: ${jobData}`);
-        return bs.put(config.queue.priority.runner, 1, 1800, jobData);
-      })
-      .then(jobId => {
-        res.json({ jobId, branchTag, composeType });
-      })
-      .finally(() => {
-        bs.quit();
-      });
-  }
+  runnersRouter.postHandler
 );
 
 // Use SSL

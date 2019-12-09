@@ -1,18 +1,11 @@
-const { default: BeanstalkdClient } = require("beanstalkd");
 const { exec } = require("child_process");
-const path = require("path");
+const queue = require("./queue");
 
 // Get .env configuration
 require("dotenv").config();
 
 // Get config.json
 const { config } = require("./config");
-
-// Beanstalk client
-const worker = new BeanstalkdClient(
-  process.env.BEANSTALKD_LISTEN,
-  process.env.BEANSTALKD_PORT
-);
 
 // Build command for different job types
 function getCommand(jobData) {
@@ -55,34 +48,26 @@ function execCommand(command) {
 function loop() {
   console.log("Worker waiting for job...");
 
-  // Worker will wait for next job.
-  worker
-    .reserveWithTimeout(config.beanstalk.timeout)
-    .spread((reserveId, body) => {
-      console.log(`Processing JobID: ${reserveId}`);
-      worker.destroy(reserveId);
+  queue
+    .fetch()
+    .then(jobData => {
+      console.log(`Job data: ${JSON.stringify(jobData)}`);
 
-      const jobData = JSON.parse(body.toString());
-      console.log(`Job data: ${body.toString()}`);
-
-      return execCommand(getCommand(jobData)).then(() => {
+      // return execCommand(getCommand(jobData)).then(() => {
+      return execCommand("sleep 5").then(() => {
         // Queue next runner job
-        const runnerJobData = JSON.stringify({
+        const runnerJobData = {
           type: "run",
           branchTag: jobData.branchTag,
           composeType: jobData.composeType
-        });
+        };
 
-        console.log(`Added run task with data: ${runnerJobData}`);
-        return worker.put(config.queue.priority.runner, 1, 1800, runnerJobData);
+        console.log(`Added run task: ${JSON.stringify(runnerJobData)}`);
+        return queue.push(config.queue.priority.runner, runnerJobData);
       });
     })
     .catch(error => {
-      if (error.message === "TIMED_OUT") {
-        return console.log("Wait timed out.");
-      }
-
-      console.error("Worker loop failed with error.", error);
+      console.error("Worker loop failed with following error.", error);
     })
     .finally(() => {
       // We will always start next loop.
@@ -91,21 +76,5 @@ function loop() {
 }
 
 // Worker will work in infinite loop.
-worker
-  .connect()
-  .then(() => {
-    return worker.use(config.beanstalk.tube);
-  })
-  .then(() => {
-    return worker.watch(config.beanstalk.tube);
-  })
-  .then(() => {
-    return worker.ignore("default");
-  })
-  .then(() => {
-    console.log("Worker started");
-    loop();
-  })
-  .catch(error => {
-    console.error("Worker init failed with error.", error);
-  });
+console.log("Worker started");
+loop();

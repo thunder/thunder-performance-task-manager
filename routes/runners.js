@@ -1,5 +1,5 @@
 const { body: validateBody } = require("express-validator");
-const { default: BeanstalkdClient } = require("beanstalkd");
+const queue = require("../queue");
 
 // Get config.json
 const { config } = require("../config");
@@ -30,31 +30,14 @@ const postHandler = (req, res) => {
   // Use provided values.
   let { branchTag, composeType } = req.body;
 
-  // Create connection and add job.
-  const bs = new BeanstalkdClient(
-    process.env.BEANSTALKD_LISTEN,
-    process.env.BEANSTALKD_PORT
-  );
-
-  bs.connect()
-    .then(() => {
-      return bs.use(config.beanstalk.tube);
+  queue
+    .push(config.queue.priority.runner, {
+      type: "run",
+      branchTag,
+      composeType
     })
     .then(() => {
-      const jobData = JSON.stringify({
-        type: "run",
-        branchTag,
-        composeType
-      });
-
-      console.log(`Added queue with data: ${jobData}`);
-      return bs.put(config.queue.priority.runner, 1, 1800, jobData);
-    })
-    .then(jobId => {
-      res.json({ jobId, branchTag, composeType });
-    })
-    .finally(() => {
-      bs.quit();
+      res.json({ success: true });
     });
 };
 

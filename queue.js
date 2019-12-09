@@ -19,6 +19,9 @@
 
 const Redis = require("ioredis");
 
+// Ensure that .env configuration is loaded
+require("dotenv").config();
+
 // Get config.json
 const { config } = require("./config");
 
@@ -60,12 +63,12 @@ const push = (priority, jobData, ttl = 0) => {
   // 1. set key with branch containing jobInfo with TTL - STRING
   // when TTL is not provided, we are not going to set new job data
   if (ttl > 0) {
-    redisCommands.push(["SET", branchTag, JSON.stringify(jobData), "EX", ttl]);
+    redisCommands.push(["set", branchTag, JSON.stringify(jobData), "ex", ttl]);
   }
 
   // 2. queue branch with priority - SORTED SET
   redisCommands.push([
-    "ZADD",
+    "zadd",
     config.redis.queueName,
     getTimestampPriority(priority),
     branchTag

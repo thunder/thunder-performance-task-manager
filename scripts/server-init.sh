@@ -3,6 +3,9 @@
 #
 # Init server script
 
+# Deployment directory
+export DEPLOYMENT_DIR="/home/${USER}/thunder-ptm"
+
 # Install Docker
 sudo apt-get update
 sudo apt-get install --yes apt-transport-https ca-certificates curl software-properties-common
@@ -24,18 +27,35 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 nvm install --lts node
 
-# Install Redis
-sudo apt-get install --yes redis
+# Checkout repository
+git clone https://github.com/thunder/thunder-performance-task-manager.git "${DEPLOYMENT_DIR}"
+cd "${DEPLOYMENT_DIR}"
 
 # Add certificates
-openssl req -nodes -new -x509 -keyout ../server.key -out ../server.cert -subj "/C=DE/ST=Bavaria/L=Munich/O=Thunder/OU=Thunder"
+openssl req -nodes -new -x509 -keyout "${DEPLOYMENT_DIR}/server.key" -out "${DEPLOYMENT_DIR}/server.cert" -subj "/C=DE/ST=Bavaria/L=Munich/O=Thunder/OU=Thunder"
 
 # Install systemd services from project
-sudo cp thunder-ptm-worker.service /etc/systemd/system
-sudo cp thunder-ptm-service.service /etc/systemd/system
+sudo cp "${DEPLOYMENT_DIR}/scripts/thunder-ptm-worker.service" /etc/systemd/system
+sudo cp "${DEPLOYMENT_DIR}/scripts/thunder-ptm-service.service" /etc/systemd/system
 
 sudo systemctl enable thunder-ptm-worker
 sudo systemctl enable thunder-ptm-service
 
+# Set .env
+cp "${DEPLOYMENT_DIR}/.env.example" "${DEPLOYMENT_DIR}/.env"
+
+# Generate TOKEN
+echo "EXPRESS_TOKEN=$(openssl rand -hex 64)" >> "${DEPLOYMENT_DIR}/.env"
+
+# Build project
+npm install --prefix "${DEPLOYMENT_DIR}"
+
+# Set .env for Elastic APM
+cp "${DEPLOYMENT_DIR}/warmer/.env.example" "${DEPLOYMENT_DIR}/warmer/.env"
+
+# Start Redis
+docker run -p 127.0.0.1:6379:6379 --name redis-server -d redis
+
+# Start services
 sudo systemctl start thunder-ptm-worker
 sudo systemctl start thunder-ptm-service

@@ -31,11 +31,15 @@ const postHandler = (req, res) => {
   let { branchTag, composeType } = req.body;
 
   queue
-    .push(config.queue.priority.runner, {
-      type: "run",
-      branchTag,
-      composeType
-    })
+    .push(
+      config.queue.priority.runner,
+      {
+        type: "run",
+        branchTag,
+        composeType
+      },
+      config.queue.defaultExpire
+    )
     .then(() => {
       res.json({ success: true });
     });

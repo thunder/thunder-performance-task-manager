@@ -9,11 +9,11 @@ Task manager has two services.
 
 **The API endpoint service**
 
-It has purpose to listen on request for running jobs and it will queue tasks in Beanstalk. It's listens by default on port `3000`. It's also protected with Bearer token authentication.
+It has purpose to listen on request for running jobs and it will queue tasks in Redis. It's listens by default on port `3000`. It's also protected with Bearer token authentication.
 
 **Worker**
 
-The worker service is there to handle queue tasks in Beanstalk. It will handle them in sequential order.
+The worker service is there to handle queue tasks in Redis. It will handle them in sequential order.
 
 Worker can handle two types of tasks:
 

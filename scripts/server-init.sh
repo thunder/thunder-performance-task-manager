@@ -24,8 +24,8 @@ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
 export NVM_DIR="$HOME/.nvm"
 nvm install --lts node
 
-# Install Beanstalk
-sudo apt-get install --yes beanstalkd
+# Install Redis
+sudo apt-get install --yes redis
 
 # Add certificates
 openssl req -nodes -new -x509 -keyout ../server.key -out ../server.cert -subj "/C=DE/ST=Bavaria/L=Munich/O=Thunder/OU=Thunder"

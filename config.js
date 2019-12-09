@@ -1,15 +1,17 @@
 // Application configuration
-// TODO: Add
 const config = {
   queue: {
     priority: {
       warmer: 10,
       runner: 100
-    }
+    },
+    // 3 days
+    defaultExpire: 259200,
+    // Fetch time out in seconds. 0 = infinite
+    fetchTimeout: 0
   },
-  beanstalk: {
-    tube: "thunder-performance",
-    timeout: 1800
+  redis: {
+    queueName: "thunder-ptm-queue"
   }
 };
 

@@ -36,14 +36,21 @@ const postHandler = (req, res) => {
   let { branchTag, imageTag, composeType } = req.body;
 
   queue
-    .push(config.queue.priority.warmer, {
-      type: "warmup",
-      branchTag,
-      imageTag,
-      composeType
-    })
+    .push(
+      config.queue.priority.warmer,
+      {
+        type: "warmup",
+        branchTag,
+        imageTag,
+        composeType
+      },
+      config.queue.defaultExpire
+    )
     .then(() => {
       res.json({ success: true });
+    })
+    .catch(error => {
+      console.log("Failed to add task.", error);
     });
 };
 

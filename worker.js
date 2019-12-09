@@ -53,8 +53,7 @@ function loop() {
     .then(jobData => {
       console.log(`Job data: ${JSON.stringify(jobData)}`);
 
-      // return execCommand(getCommand(jobData)).then(() => {
-      return execCommand("sleep 5").then(() => {
+      return execCommand(getCommand(jobData)).then(() => {
         // Queue next runner job
         const runnerJobData = {
           type: "run",
@@ -63,6 +62,16 @@ function loop() {
         };
 
         console.log(`Added run task: ${JSON.stringify(runnerJobData)}`);
+
+        // In case of warmup job, we are going to set branch for runner execution with expire time
+        if (jobData.type === "warmup") {
+          return queue.push(
+            config.queue.priority.runner,
+            runnerJobData,
+            config.queue.defaultExpire
+          );
+        }
+
         return queue.push(config.queue.priority.runner, runnerJobData);
       });
     })

@@ -1,28 +1,44 @@
-const { default: BeanstalkdClient } = require("beanstalkd");
+/**
+ * Implementation of queue with Redis as backend
+ *
+ * We need following functionality from queue:
+ * 1. Order by priority (1st order)
+ * 2. Order by time of adding (2nd order)
+ * 3. Unique branches in queue
+ * 4. Time to live for queued branches
+ *
+ * With Redis we can achieve these functionalities:
+ * 1. out of box with SORTED SETS
+ * 2. we need to work around priority and use timestamp with multiplying it with priority
+ * 3. we need to queue only branch name with priorities
+ * 4. we need additional STRING value that contains job data for branch. That value should have TTL
+ *
+ * TODO:
+ * - unique JobID is now only branch, but maybe we should extend it to use also "composeType"
+ */
+
+const Redis = require("ioredis");
 
 // Get config.json
 const { config } = require("./config");
 
-// Get worker
-const getWorker = () => {
-  return new BeanstalkdClient(
-    process.env.BEANSTALKD_LISTEN,
-    process.env.BEANSTALKD_PORT
-  );
+/**
+ * Get redis connection
+ *
+ * @returns {object}
+ */
+getRedis = () => {
+  return new Redis(process.env.REDIS_PORT, process.env.REDIS_HOST);
 };
 
-// TODO:
-// We need following functionality
-// 1. Order by priority (1st order)
-// 2. Order by time of adding (2nd order)
-// 3. Unique branches in queue
-// 4. Time to live for queued branches
-// --
-// With Redis we can achieve these functionalities
-// 1. out of box with sorted sets
-// 2. we need to work around priority and use timestamp with +/- priority times
-// 3. we need to queue only branch name and compose type, to have unique values over different builds
-// 4. we need additionally key-value entry with TTL on it for every branch
+/**
+ * Get timestamp ordered priority
+ *
+ * @returns {int}
+ */
+getTimestampPriority = priority => {
+  return Date.now() * priority;
+};
 
 /**
  * Add new job
@@ -32,23 +48,30 @@ const getWorker = () => {
  *
  * @returns {Promise}
  */
-const push = (priority, jobData) => {
-  const worker = getWorker();
+const push = (priority, jobData, ttl = 0) => {
+  const redis = getRedis();
 
-  return worker
-    .connect()
-    .then(() => {
-      return worker.use(config.beanstalk.tube);
-    })
-    .then(() => {
-      const jobDataString = JSON.stringify(jobData);
+  // We are going to execute all commands in one pipeline
+  let redisCommands = [];
 
-      console.log(`Added queue with data: ${jobDataString}`);
-      return worker.put(priority, 1, 1800, jobDataString);
-    })
-    .finally(() => {
-      worker.quit();
-    });
+  // Push is done in following steps
+  const { branchTag } = jobData;
+
+  // 1. set key with branch containing jobInfo with TTL - STRING
+  // when TTL is not provided, we are not going to set new job data
+  if (ttl > 0) {
+    redisCommands.push(["SET", branchTag, JSON.stringify(jobData), "EX", ttl]);
+  }
+
+  // 2. queue branch with priority - SORTED SET
+  redisCommands.push([
+    "ZADD",
+    config.redis.queueName,
+    getTimestampPriority(priority),
+    branchTag
+  ]);
+
+  return redis.pipeline(redisCommands).exec();
 };
 
 /**
@@ -57,41 +80,31 @@ const push = (priority, jobData) => {
  * @returns {Promise}
  */
 const fetch = () => {
-  const worker = getWorker();
+  const redis = getRedis();
 
-  return worker
-    .connect()
-    .then(() => {
-      return worker.use(config.beanstalk.tube);
-    })
-    .then(() => {
-      return worker.watch(config.beanstalk.tube);
-    })
-    .then(() => {
-      return worker.ignore("default");
-    })
-    .then(() => {
-      return worker
-        .reserveWithTimeout(config.beanstalk.timeout)
-        .spread((reserveId, body) => {
-          console.log(`Processing JobID: ${reserveId}`);
-          worker.destroy(reserveId);
+  const loopResolver = () => {
+    // Fetching is done in following way
+    // 1. Pop next queued branch - SORTED SET
+    // BZPOPMIN waits for queue data until available and pops first element (with biggest priority)
+    return redis
+      .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
+      .then(([_, branchTag]) => {
+        // 2. Get job data for branch - STRING
+        return redis.get(branchTag);
+      })
+      .then(result => {
+        // If job data is not available for branch we are going to check for next job
+        if (!result) {
+          return loopResolver();
+        }
 
-          return new Promise((resolve, reject) => {
-            resolve(JSON.parse(body.toString()));
-          });
+        return new Promise(resolve => {
+          resolve(JSON.parse(result));
         });
-    })
-    .catch(error => {
-      if (error.message === "TIMED_OUT") {
-        return console.log("Wait timed out.");
-      }
+      });
+  };
 
-      console.log("Queue error.", error);
-    })
-    .finally(() => {
-      worker.quit();
-    });
+  return loopResolver();
 };
 
 module.exports = {

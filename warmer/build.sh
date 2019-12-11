@@ -90,5 +90,7 @@ docker-compose --file "${DOCKER_COMPOSE_FILE}" stop
 docker commit "db-${BRANCH_TAG}" "warm-db:${BRANCH_TAG}"
 docker commit "thunder-php-${BRANCH_TAG}" "warm-thunder-php:${BRANCH_TAG}"
 
+# TODO: delete $THUNDER_PERFORMANCE_IMAGE_NAME docker image, because it's not needed anymore
+
 # Remove all docker-composer containers and volumes
 docker-compose --file "${DOCKER_COMPOSE_FILE}" down --volumes

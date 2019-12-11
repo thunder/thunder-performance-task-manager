@@ -3,7 +3,11 @@ version: "3.3"
 services:
   db:
     image: "warm-db:${BRANCH_TAG}"
-    container_name: "db-runner-${BRANCH_TAG}"
+    container_name: "runner-db-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: "runner-db"
     environment:
       MYSQL_ROOT_PASSWORD: "root"
       MYSQL_DATABASE: "thunder"
@@ -12,9 +16,18 @@ services:
     command: ["--secure-file-priv=/tmp", "--datadir=/var/lib/mysql-db"]
   chrome:
     image: "selenium/standalone-chrome:3.141.59-oxygen"
+    container_name: "runner-chrome-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: "runner-chrome"
   thunder-php:
     image: "warm-thunder-php:${BRANCH_TAG}"
-    container_name: "thunder-php-runner-${BRANCH_TAG}"
+    container_name: "runner-thunder-php-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: "runner-thunder-php"
     command: ["su", "-", "thunder", "thunder-php-test"]
     ports:
       - "8080:8080"

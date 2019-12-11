@@ -16,26 +16,26 @@ DOCKER_COMPOSE_FILE=""
 # Process script options
 while [ -n "$1" ]; do
     case "$1" in
-        --tag)
-            # Get param - Branch tag
-            BRANCH_TAG="$2"
+    --tag)
+        # Get param - Branch tag
+        BRANCH_TAG="$2"
 
-            shift
+        shift
         ;;
-        --image)
-            # Get param - Thunder performance image name
-            THUNDER_PERFORMANCE_IMAGE_NAME="$2"
+    --image)
+        # Get param - Thunder performance image name
+        THUNDER_PERFORMANCE_IMAGE_NAME="$2"
 
-            shift
+        shift
         ;;
-        --file)
-            # Get param - docker-compose config file
-            DOCKER_COMPOSE_FILE="$2"
+    --file)
+        # Get param - docker-compose config file
+        DOCKER_COMPOSE_FILE="$2"
 
-            shift
+        shift
         ;;
 
-        *) echo "Option $1 not recognized." ;;
+    *) echo "Option $1 not recognized." ;;
     esac
 
     shift
@@ -71,7 +71,7 @@ docker-compose --file "${DOCKER_COMPOSE_FILE}" up -d
 
 # Listen on Docker exit event on Thunder performance container (TODO: limit waiting time to 15mins)
 echo "Waiting for warmup build to finish ..."
-EXIT_CODE=$(docker wait "thunder-php-${BRANCH_TAG}")
+EXIT_CODE=$(docker wait "warmer-thunder-php-${BRANCH_TAG}")
 
 # Check for the timeout
 if [ "${EXIT_CODE}" != "0" ]; then

@@ -25,13 +25,20 @@ require("dotenv").config();
 // Get config.json
 const { config } = require("./config");
 
+// Keep single redis connection for process
+let redisConnection = null;
+
 /**
  * Get redis connection
  *
  * @returns {object}
  */
 getRedis = () => {
-  return new Redis(process.env.REDIS_PORT, process.env.REDIS_HOST);
+  if (!redisConnection) {
+    redisConnection = new Redis(process.env.REDIS_PORT, process.env.REDIS_HOST);
+  }
+
+  return redisConnection;
 };
 
 /**

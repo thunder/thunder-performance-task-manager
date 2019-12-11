@@ -3,7 +3,11 @@ version: "3.3"
 services:
   db:
     image: "mysql:5.7"
-    container_name: "db-${BRANCH_TAG}"
+    container_name: "warmer-db-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: warmer-db
     environment:
       MYSQL_ROOT_PASSWORD: "root"
       MYSQL_DATABASE: "thunder"
@@ -14,9 +18,18 @@ services:
       - "tmp-dir:/tmp"
   chrome:
     image: "selenium/standalone-chrome:3.141.59-oxygen"
+    container_name: "warmer-chrome-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: "warmer-chrome"
   thunder-php:
     image: "${THUNDER_PERFORMANCE_IMAGE_NAME}"
-    container_name: "thunder-php-${BRANCH_TAG}"
+    container_name: "warmer-thunder-php-${BRANCH_TAG}"
+    logging:
+      driver: journald
+      options:
+        tag: "warmer-thunder-php"
     environment:
       DB_HOST: "db"
       CHROME_HOST: "chrome"

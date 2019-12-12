@@ -87,8 +87,8 @@ fi
 docker-compose --file "${DOCKER_COMPOSE_FILE}" stop
 
 # Persist database and Thunder performance container
-docker commit "db-${BRANCH_TAG}" "warm-db:${BRANCH_TAG}"
-docker commit "thunder-php-${BRANCH_TAG}" "warm-thunder-php:${BRANCH_TAG}"
+docker commit "warmer-db-${BRANCH_TAG}" "warm-db:${BRANCH_TAG}"
+docker commit "warmer-thunder-php-${BRANCH_TAG}" "warm-thunder-php:${BRANCH_TAG}"
 
 # TODO: delete $THUNDER_PERFORMANCE_IMAGE_NAME docker image, because it's not needed anymore
 

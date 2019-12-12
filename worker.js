@@ -34,12 +34,18 @@ function execCommand(command) {
 
   return new Promise((resolve, reject) => {
     exec(command, (error, stdout, stderr) => {
+      console.log(`Command finished with following output:`);
+      console.log(`--- stdout ---`);
+      console.log(stdout);
+      console.log(`--- stderr ---`);
+      console.log(stderr);
+      console.log(`--- end ---`);
+
       if (error) {
-        console.error(`Command execution error: ${error} - output: ${stderr}`);
+        console.error(`Command execution error: ${error}`);
         reject(error);
       }
 
-      console.log(`Worker finished: ${stdout}`);
       resolve();
     });
   });

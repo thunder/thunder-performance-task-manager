@@ -17,6 +17,13 @@ require("dotenv").config();
 const app = express();
 app.use(express.json());
 
+// Add Logging for every request
+app.use((req, res, next) => {
+  console.log(`Request on: ${req.originalUrl} - from: ${req.ip}`);
+
+  next();
+});
+
 // We will use single Bearer token from .env for all routes
 passport.use(
   new BearerStrategy(function(token, done) {
@@ -33,6 +40,8 @@ passport.use(
 
       return;
     }
+
+    console.log("Unauthorized request!");
 
     done(null, false);
   })

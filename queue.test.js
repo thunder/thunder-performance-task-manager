@@ -21,6 +21,15 @@ beforeAll(async () => {
   try {
     const docker = new Docker();
 
+    // Fetch Redis docker image from DockerHub.
+    const stream = await docker.createImage({ fromImage: "redis:alpine" });
+    await new Promise((resolve, reject) => {
+      docker.modem.followProgress(stream, (err, res) =>
+        err ? reject(err) : resolve(res)
+      );
+    });
+
+    // Start Redis docker container.
     redisContainer = await docker.createContainer({
       Image: "redis:alpine",
       HostConfig: {

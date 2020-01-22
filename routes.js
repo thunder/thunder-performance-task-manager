@@ -69,8 +69,8 @@ const postHandler = (req, res, type) => {
     .push(
       priority,
       {
-        type,
-        ...req.body
+        ...req.body,
+        type
       },
       config.queue.defaultExpire
     )

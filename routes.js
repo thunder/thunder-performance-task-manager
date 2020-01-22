@@ -52,9 +52,7 @@ const validationErrorHandler = (req, res, next) => {
     return res.status(422).json({ errors: errors.array() });
   }
 
-  next();
-
-  return null;
+  return next();
 };
 
 // Request handler

@@ -68,16 +68,6 @@ function loop() {
         };
 
         console.log(`Added run task: ${JSON.stringify(runnerJobData)}`);
-
-        // In case of warmup job, we are going to set branch for runner execution with expire time
-        if (jobData.type === "warmup") {
-          return queue.push(
-            config.queue.priority.runner,
-            runnerJobData,
-            config.queue.defaultExpire
-          );
-        }
-
         return queue.push(config.queue.priority.runner, runnerJobData);
       });
     })

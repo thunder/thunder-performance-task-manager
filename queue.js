@@ -87,7 +87,7 @@ const push = (priority, jobData, ttl = 0) => {
     ]);
   }
 
-  // 2. set ket with branch name that contains Job Data (no expire time on it) - STRING
+  // 2. set key with branch name that contains Job Data (no expire time on it) - STRING
   redisCommands.push(["set", branchTag, JSON.stringify(jobData)]);
 
   // 3. queue branch with priority - SORTED SET

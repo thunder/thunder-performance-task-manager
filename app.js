@@ -3,12 +3,10 @@ var fs = require("fs");
 const https = require("https");
 const passport = require("passport");
 
-const { body: validationResult } = require("express-validator");
 const { Strategy: BearerStrategy } = require("passport-http-bearer");
 
 // Routes definitions
-const warmersRouter = require("./routes/warmers");
-const runnersRouter = require("./routes/runners");
+const routes = require("./routes");
 
 // Get .env configuration
 require("dotenv").config();
@@ -48,17 +46,6 @@ passport.use(
 );
 app.all("*", passport.authenticate("bearer", { session: false }));
 
-// Validation errors handler
-const validationErrorHandler = (req, res, next) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
-
-  next();
-};
-
 // To create warmup task we need following information:
 // branchTag - the branch tag used to separate runs
 // imageTag - the docker image tag of "burda/thunder-performance" docker
@@ -66,11 +53,13 @@ const validationErrorHandler = (req, res, next) => {
 app.post(
   "/warmers",
   // Validation and escaping
-  warmersRouter.validations,
+  routes.validate("warmers"),
   // Handle validation errors
-  validationErrorHandler,
+  routes.validationErrorHandler,
   // Process request
-  warmersRouter.postHandler
+  (req, res) => {
+    routes.postHandler(req, res, "warmup");
+  }
 );
 
 // To create run task we need following information:
@@ -79,11 +68,13 @@ app.post(
 app.post(
   "/runners",
   // Validation and escaping
-  runnersRouter.validations,
+  routes.validate("runners"),
   // Handle validation errors
-  validationErrorHandler,
+  routes.validationErrorHandler,
   // Process request
-  runnersRouter.postHandler
+  (req, res) => {
+    routes.postHandler(req, res, "run");
+  }
 );
 
 // Use SSL

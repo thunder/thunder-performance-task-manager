@@ -79,9 +79,7 @@ describe('queue', () => {
   });
 
   it('we should be able to push in queue', async () => {
-    await expect(
-      queue.push(10, { branchTag: 'test_push' }, 1),
-    ).resolves.toBeDefined();
+    await expect(queue.push(10, { branchTag: 'test_push' }, 1)).resolves.toBeDefined();
   });
 
   it('we should be able to fetch from queue', async () => {
@@ -126,11 +124,13 @@ describe('queue', () => {
       }))
       .then(() => queue.push(1, { branchTag: 'ttl_2' }, 2))
       .then(() => queue.push(100, { branchTag: 'low_priority_ttl_100' }, 100))
-      .then(() => new Promise((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 2000);
-      }))
+      .then(
+        () => new Promise((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, 2000);
+        }),
+      )
       .then(() => expect(queue.fetch()).resolves.toEqual({
         branchTag: 'low_priority_ttl_100',
       }));
@@ -146,11 +146,13 @@ describe('queue', () => {
         noTtlChange: true,
       }))
       .then(() => queue.push(1, { branchTag: 'ttl_2', noTtlChange: true }))
-      .then(() => new Promise((resolve) => {
-        setTimeout(() => {
-          resolve();
-        }, 2000);
-      }))
+      .then(
+        () => new Promise((resolve) => {
+          setTimeout(() => {
+            resolve();
+          }, 2000);
+        }),
+      )
       .then(() => expect(queue.fetch()).resolves.toEqual({
         branchTag: 'low_priority_ttl_100',
       }));

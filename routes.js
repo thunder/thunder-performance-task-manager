@@ -20,7 +20,7 @@ const validate = (method) => {
       .trim()
       .custom((value) => {
         if (!['default'].includes(value)) {
-          return Promise.reject('Provided composeType is not supported.');
+          return Promise.reject(new Error('Provided composeType is not supported.'));
         }
 
         return true;
@@ -29,9 +29,6 @@ const validate = (method) => {
   ];
 
   switch (method) {
-    case 'runners': {
-      return validations;
-    }
     case 'warmers': {
       return [
         ...validations,
@@ -42,6 +39,8 @@ const validate = (method) => {
           .escape(),
       ];
     }
+    default:
+      return validations;
   }
 };
 
@@ -54,15 +53,17 @@ const validationErrorHandler = (req, res, next) => {
   }
 
   next();
+
+  return null;
 };
 
 // Request handler
 const postHandler = (req, res, type) => {
   // Use provided values.
   let priority = 0;
-  if (type == 'run') {
+  if (type === 'run') {
     priority = config.queue.priority.runner;
-  } else if (type == 'warmup') {
+  } else if (type === 'warmup') {
     priority = config.queue.priority.warmer;
   }
   queue

@@ -33,7 +33,7 @@ let redisConnection = null;
  *
  * @returns {object}
  */
-getRedis = () => {
+const getRedis = () => {
   if (!redisConnection) {
     redisConnection = new Redis(process.env.REDIS_PORT, process.env.REDIS_HOST);
   }
@@ -46,14 +46,14 @@ getRedis = () => {
  *
  * @returns {int}
  */
-getTimestampPriority = (priority) => Date.now() * priority;
+const getTimestampPriority = (priority) => Date.now() * priority;
 
 /**
  * Get key name for TTL Holder of branch.
  *
  * @returns {string}
  */
-getBranchTTLHolderKey = (branchTag) => `${branchTag}_TTL_HOLDER`;
+const getBranchTTLHolderKey = (branchTag) => `${branchTag}_TTL_HOLDER`;
 
 /**
  * Add new job
@@ -74,25 +74,14 @@ const push = (priority, jobData, ttl = 0) => {
 
   // 1. set key with branch with TTL - STRING
   if (ttl > 0) {
-    redisCommands.push([
-      'set',
-      getBranchTTLHolderKey(branchTag),
-      branchTag,
-      'ex',
-      ttl,
-    ]);
+    redisCommands.push(['set', getBranchTTLHolderKey(branchTag), branchTag, 'ex', ttl]);
   }
 
   // 2. set key with branch name that contains Job Data (no expire time on it) - STRING
   redisCommands.push(['set', branchTag, JSON.stringify(jobData)]);
 
   // 3. queue branch with priority - SORTED SET
-  redisCommands.push([
-    'zadd',
-    config.redis.queueName,
-    getTimestampPriority(priority),
-    branchTag,
-  ]);
+  redisCommands.push(['zadd', config.redis.queueName, getTimestampPriority(priority), branchTag]);
 
   return redis.pipeline(redisCommands).exec();
 };
@@ -105,31 +94,29 @@ const push = (priority, jobData, ttl = 0) => {
 const fetch = () => {
   const redis = getRedis();
 
-  const loopResolver = () =>
-    // Fetching is done in following way
-    // 1. Pop next queued branch - SORTED SET
-    // BZPOPMIN waits for queue data until available and pops first element (with biggest priority)
-    redis
-      .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
-      .then(([_, branchTag]) =>
-        // 2. Get TTL Holder for branch - STRING
-        // and Job Data - STRING
-        redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
-      .then(([ttlBranchTag, jobDefinition]) => {
-        const jobData = JSON.parse(jobDefinition);
+  // Fetching is done in following way
+  // 1. Pop next queued branch - SORTED SET
+  // BZPOPMIN waits for queue data until available and pops first element (with biggest priority)
+  const loopResolver = () => redis
+    .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
+  // 2. Get TTL Holder for branch - STRING
+  // and Job Data - STRING
+    .then(([branchTag]) => redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
+    .then(([ttlBranchTag, jobDefinition]) => {
+      const jobData = JSON.parse(jobDefinition);
 
-        // If job has expired, we should clean-up Job Data and check for next job.
-        if (!ttlBranchTag) {
-          redis.del(jobData.branchTag);
+      // If job has expired, we should clean-up Job Data and check for next job.
+      if (!ttlBranchTag) {
+        redis.del(jobData.branchTag);
 
-          // Returns new Promise for fetch
-          return loopResolver();
-        }
+        // Returns new Promise for fetch
+        return loopResolver();
+      }
 
-        return new Promise((resolve) => {
-          resolve(jobData);
-        });
+      return new Promise((resolve) => {
+        resolve(jobData);
       });
+    });
   return loopResolver();
 };
 

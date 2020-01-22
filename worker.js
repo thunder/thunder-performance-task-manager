@@ -11,18 +11,20 @@ const { config } = require('./config');
 function getCommand(jobData) {
   switch (jobData.type) {
     // WarmUp
+    // eslint-disable-next-line max-len
     // ../warmer/build.sh --tag test --image burda/thunder-performance:test --file ../warmer/docker-compose.default.yml
-    case 'warmup':
+    case 'warmup': {
       const warmerArgs = `--tag ${jobData.branchTag} --image burda/thunder-performance:${jobData.imageTag} --file ${__dirname}/warmer/docker-compose.${jobData.composeType}.yml`;
 
       return `${__dirname}/warmer/build.sh ${warmerArgs}`;
-
+    }
     // Runner
     // ../runner/build.sh --tag test --file ../runner/docker-compose.default.yml
-    case 'run':
+    case 'run': {
       const runnerArgs = `--tag ${jobData.branchTag} --file ${__dirname}/runner/docker-compose.${jobData.composeType}.yml`;
 
       return `${__dirname}/runner/build.sh ${runnerArgs}`;
+    }
     default:
       throw new Error(`Job type "${jobData}" is not supported.`);
   }

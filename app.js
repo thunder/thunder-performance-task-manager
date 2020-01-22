@@ -24,17 +24,13 @@ app.use((req, res, next) => {
 
 // We will use single Bearer token from .env for all routes
 passport.use(
-  new BearerStrategy(((token, done) => {
+  new BearerStrategy((token, done) => {
     if (
       process.env.EXPRESS_TOKEN
       && process.env.EXPRESS_TOKEN.length > 0
       && process.env.EXPRESS_TOKEN === token
     ) {
-      done(
-        null,
-        { user: 'admin', token: process.env.EXPRESS_TOKEN },
-        { scope: 'all' },
-      );
+      done(null, { user: 'admin', token: process.env.EXPRESS_TOKEN }, { scope: 'all' });
 
       return;
     }
@@ -42,7 +38,7 @@ passport.use(
     console.log('Unauthorized request!');
 
     done(null, false);
-  })),
+  }),
 );
 app.all('*', passport.authenticate('bearer', { session: false }));
 

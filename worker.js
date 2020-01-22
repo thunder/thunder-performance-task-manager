@@ -61,11 +61,7 @@ function loop() {
 
       return execCommand(getCommand(jobData)).then(() => {
         // Queue next runner job
-        const runnerJobData = {
-          type: "run",
-          branchTag: jobData.branchTag,
-          composeType: jobData.composeType
-        };
+        const runnerJobData = { ...jobData, type: "run" };
 
         console.log(`Added run task: ${JSON.stringify(runnerJobData)}`);
         return queue.push(config.queue.priority.runner, runnerJobData);

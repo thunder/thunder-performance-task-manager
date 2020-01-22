@@ -40,7 +40,8 @@ beforeAll(async () => {
             }
           ]
         }
-      }
+      },
+      name: "queue-test-redis"
     });
     await redisContainer.start();
     console.log("Redis container is ready on port: 6380");
@@ -82,10 +83,7 @@ describe("queue", () => {
   it("we should be able to push in queue", async () => {
     await expect(
       queue.push(10, { branchTag: "test_push" }, 1)
-    ).resolves.toEqual([
-      [null, "OK"],
-      [null, 1]
-    ]);
+    ).resolves.toBeDefined();
   });
 
   it("we should be able to fetch from queue", async () => {
@@ -149,6 +147,38 @@ describe("queue", () => {
       })
       .then(() => {
         return queue.push(100, { branchTag: "low_priority_ttl_100" }, 100);
+      })
+      .then(() => {
+        return new Promise(resolve => {
+          setTimeout(() => {
+            resolve();
+          }, 2000);
+        });
+      })
+      .then(() => {
+        return expect(queue.fetch()).resolves.toEqual({
+          branchTag: "low_priority_ttl_100"
+        });
+      });
+  }, 5000);
+
+  it("pushing new job data should not change TTL", async () => {
+    await queue
+      .push(100, { branchTag: "low_priority_ttl_100" }, 100)
+      .then(() => {
+        return queue.push(1, { branchTag: "ttl_2" }, 2);
+      })
+      .then(() => {
+        return queue.push(1, { branchTag: "ttl_2", noTtlChange: true });
+      })
+      .then(() => {
+        return expect(queue.fetch()).resolves.toEqual({
+          branchTag: "ttl_2",
+          noTtlChange: true
+        });
+      })
+      .then(() => {
+        return queue.push(1, { branchTag: "ttl_2", noTtlChange: true });
       })
       .then(() => {
         return new Promise(resolve => {

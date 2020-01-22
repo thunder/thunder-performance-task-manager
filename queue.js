@@ -101,7 +101,8 @@ const fetch = () => {
     .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
   // 2. Get TTL Holder for branch - STRING
   // and Job Data - STRING
-    .then(([branchTag]) => redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
+  /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
+    .then(([_, branchTag]) => redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
     .then(([ttlBranchTag, jobDefinition]) => {
       const jobData = JSON.parse(jobDefinition);
 

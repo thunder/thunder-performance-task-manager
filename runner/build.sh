@@ -55,15 +55,12 @@ docker-compose --file "${DOCKER_COMPOSE_FILE}" up -d
 echo "Waiting for runner to finish ..."
 EXIT_CODE=$(docker wait "runner-thunder-php-${BRANCH_TAG}")
 
+# Remove all docker-composer containers and volumes
+docker-compose --file "${DOCKER_COMPOSE_FILE}" down -v
+
 # Check for the timeout
 if [ "${EXIT_CODE}" != "0" ]; then
     echo "The run has failed!"
 
-    # Remove all docker-composer containers and volumes
-    docker-compose --file "${DOCKER_COMPOSE_FILE}" down -v
-
     exit 1
 fi
-
-# Remove all docker-composer containers and volumes
-docker-compose --file "${DOCKER_COMPOSE_FILE}" down -v

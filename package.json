@@ -10,7 +10,8 @@
   },
   "scripts": {
     "service": "node app.js",
-    "worker": "node worker.js"
+    "worker": "node worker.js",
+    "test": "jest"
   },
   "dependencies": {
     "dotenv": "^8.2.0",
@@ -19,5 +20,9 @@
     "ioredis": "^4.14.1",
     "passport": "^0.4.0",
     "passport-http-bearer": "^1.0.1"
+  },
+  "devDependencies": {
+    "dockerode": "^3.0.2",
+    "jest": "^24.9.0"
   }
 }

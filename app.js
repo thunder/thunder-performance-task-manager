@@ -10,6 +10,12 @@ const { Strategy: BearerStrategy } = require("passport-http-bearer");
 const warmersRouter = require("./routes/warmers");
 const runnersRouter = require("./routes/runners");
 
+// The queue
+const queue = require("./queue");
+
+// Get config.json
+const { config } = require("./config");
+
 // Get .env configuration
 require("dotenv").config();
 
@@ -59,6 +65,26 @@ const validationErrorHandler = (req, res, next) => {
   next();
 };
 
+// Add warmer request handler
+const postHandler = (req, res, type) => {
+  // Use provided values.
+  queue
+    .push(
+      config.queue.priority.warmer,
+      {
+        type,
+        ...req.body
+      },
+      config.queue.defaultExpire
+    )
+    .then(() => {
+      res.json(type);
+    })
+    .catch(error => {
+      console.log("Failed to add task.", error);
+    });
+};
+
 // To create warmup task we need following information:
 // branchTag - the branch tag used to separate runs
 // imageTag - the docker image tag of "burda/thunder-performance" docker
@@ -70,7 +96,9 @@ app.post(
   // Handle validation errors
   validationErrorHandler,
   // Process request
-  warmersRouter.postHandler
+  (req, res) => {
+    postHandler(req, res, "warmup");
+  }
 );
 
 // To create run task we need following information:
@@ -83,7 +111,9 @@ app.post(
   // Handle validation errors
   validationErrorHandler,
   // Process request
-  runnersRouter.postHandler
+  (req, res) => {
+    postHandler(req, res, "run");
+  }
 );
 
 // Use SSL

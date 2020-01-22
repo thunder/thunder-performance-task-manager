@@ -17,13 +17,13 @@
  * - unique JobID is now only branch, but maybe we should extend it to use also "composeType"
  */
 
-const Redis = require("ioredis");
+const Redis = require('ioredis');
 
 // Ensure that .env configuration is loaded
-require("dotenv").config();
+require('dotenv').config();
 
 // Get config.json
-const { config } = require("./config");
+const { config } = require('./config');
 
 // Keep single redis connection for process
 let redisConnection = null;
@@ -46,18 +46,14 @@ getRedis = () => {
  *
  * @returns {int}
  */
-getTimestampPriority = priority => {
-  return Date.now() * priority;
-};
+getTimestampPriority = (priority) => Date.now() * priority;
 
 /**
  * Get key name for TTL Holder of branch.
  *
  * @returns {string}
  */
-getBranchTTLHolderKey = branchTag => {
-  return `${branchTag}_TTL_HOLDER`;
-};
+getBranchTTLHolderKey = (branchTag) => `${branchTag}_TTL_HOLDER`;
 
 /**
  * Add new job
@@ -71,7 +67,7 @@ const push = (priority, jobData, ttl = 0) => {
   const redis = getRedis();
 
   // We are going to execute all commands in one pipeline
-  let redisCommands = [];
+  const redisCommands = [];
 
   // Push is done in following steps
   const { branchTag } = jobData;
@@ -79,23 +75,23 @@ const push = (priority, jobData, ttl = 0) => {
   // 1. set key with branch with TTL - STRING
   if (ttl > 0) {
     redisCommands.push([
-      "set",
+      'set',
       getBranchTTLHolderKey(branchTag),
       branchTag,
-      "ex",
-      ttl
+      'ex',
+      ttl,
     ]);
   }
 
   // 2. set key with branch name that contains Job Data (no expire time on it) - STRING
-  redisCommands.push(["set", branchTag, JSON.stringify(jobData)]);
+  redisCommands.push(['set', branchTag, JSON.stringify(jobData)]);
 
   // 3. queue branch with priority - SORTED SET
   redisCommands.push([
-    "zadd",
+    'zadd',
     config.redis.queueName,
     getTimestampPriority(priority),
-    branchTag
+    branchTag,
   ]);
 
   return redis.pipeline(redisCommands).exec();
@@ -109,17 +105,16 @@ const push = (priority, jobData, ttl = 0) => {
 const fetch = () => {
   const redis = getRedis();
 
-  const loopResolver = () => {
+  const loopResolver = () =>
     // Fetching is done in following way
     // 1. Pop next queued branch - SORTED SET
     // BZPOPMIN waits for queue data until available and pops first element (with biggest priority)
-    return redis
+    redis
       .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
-      .then(([_, branchTag]) => {
+      .then(([_, branchTag]) =>
         // 2. Get TTL Holder for branch - STRING
         // and Job Data - STRING
-        return redis.mget(getBranchTTLHolderKey(branchTag), branchTag);
-      })
+        redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
       .then(([ttlBranchTag, jobDefinition]) => {
         const jobData = JSON.parse(jobDefinition);
 
@@ -131,16 +126,14 @@ const fetch = () => {
           return loopResolver();
         }
 
-        return new Promise(resolve => {
+        return new Promise((resolve) => {
           resolve(jobData);
         });
       });
-  };
-
   return loopResolver();
 };
 
 module.exports = {
   push,
-  fetch
+  fetch,
 };

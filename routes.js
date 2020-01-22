@@ -8,7 +8,7 @@ const { config } = require("./config");
 
 // Validation and escaping
 const validate = method => {
-  let validations = [
+  const validations = [
     check("branchTag")
       .not()
       .isEmpty()
@@ -33,13 +33,14 @@ const validate = method => {
       return validations;
     }
     case "warmers": {
-      return validations.concat([
+      return [
+        ...validations,
         check("imageTag")
           .not()
           .isEmpty()
           .trim()
           .escape()
-      ]);
+      ];
     }
   }
 };

@@ -3,18 +3,10 @@ var fs = require("fs");
 const https = require("https");
 const passport = require("passport");
 
-const { body: validationResult } = require("express-validator");
 const { Strategy: BearerStrategy } = require("passport-http-bearer");
 
 // Routes definitions
-const warmersRouter = require("./routes/warmers");
-const runnersRouter = require("./routes/runners");
-
-// The queue
-const queue = require("./queue");
-
-// Get config.json
-const { config } = require("./config");
+const routes = require("./routes");
 
 // Get .env configuration
 require("dotenv").config();
@@ -54,37 +46,6 @@ passport.use(
 );
 app.all("*", passport.authenticate("bearer", { session: false }));
 
-// Validation errors handler
-const validationErrorHandler = (req, res, next) => {
-  const errors = validationResult(req);
-
-  if (!errors.isEmpty()) {
-    return res.status(422).json({ errors: errors.array() });
-  }
-
-  next();
-};
-
-// Add warmer request handler
-const postHandler = (req, res, type) => {
-  // Use provided values.
-  queue
-    .push(
-      config.queue.priority.warmer,
-      {
-        type,
-        ...req.body
-      },
-      config.queue.defaultExpire
-    )
-    .then(() => {
-      res.json(type);
-    })
-    .catch(error => {
-      console.log("Failed to add task.", error);
-    });
-};
-
 // To create warmup task we need following information:
 // branchTag - the branch tag used to separate runs
 // imageTag - the docker image tag of "burda/thunder-performance" docker
@@ -92,12 +53,12 @@ const postHandler = (req, res, type) => {
 app.post(
   "/warmers",
   // Validation and escaping
-  warmersRouter.validations,
+  routes.validate("warmers"),
   // Handle validation errors
-  validationErrorHandler,
+  routes.validationErrorHandler,
   // Process request
   (req, res) => {
-    postHandler(req, res, "warmup");
+    routes.postHandler(req, res, "warmup");
   }
 );
 
@@ -107,12 +68,12 @@ app.post(
 app.post(
   "/runners",
   // Validation and escaping
-  runnersRouter.validations,
+  routes.validate("runners"),
   // Handle validation errors
-  validationErrorHandler,
+  routes.validationErrorHandler,
   // Process request
   (req, res) => {
-    postHandler(req, res, "run");
+    routes.postHandler(req, res, "run");
   }
 );
 

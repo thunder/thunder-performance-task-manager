@@ -101,7 +101,6 @@ const fetch = () => {
     .bzpopmin(config.redis.queueName, config.queue.fetchTimeout)
   // 2. Get TTL Holder for branch - STRING
   // and Job Data - STRING
-  /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
     .then((result) => {
       if (!result) {
         return Promise.reject(new Error('Fetch wait did timed out.'));

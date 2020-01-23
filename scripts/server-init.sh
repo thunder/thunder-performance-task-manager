@@ -1,4 +1,3 @@
-
 #!/bin/bash
 #
 # Init server script
@@ -16,7 +15,7 @@ sudo apt-get install --yes docker-ce
 
 # Add user to docker group
 sudo groupadd docker
-sudo usermod -aG docker $USER
+sudo usermod -aG docker "${USER}"
 
 # Install docker-compose
 sudo curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -29,7 +28,7 @@ nvm install --lts node
 
 # Checkout repository
 git clone https://github.com/thunder/thunder-performance-task-manager.git "${DEPLOYMENT_DIR}"
-cd "${DEPLOYMENT_DIR}"
+cd "${DEPLOYMENT_DIR}" || exit
 
 # Add certificates
 openssl req -nodes -new -x509 -keyout "${DEPLOYMENT_DIR}/server.key" -out "${DEPLOYMENT_DIR}/server.cert" -subj "/C=DE/ST=Bavaria/L=Munich/O=Thunder/OU=Thunder"
@@ -45,7 +44,7 @@ sudo systemctl enable thunder-ptm-service
 cp "${DEPLOYMENT_DIR}/.env.example" "${DEPLOYMENT_DIR}/.env"
 
 # Generate TOKEN
-echo "EXPRESS_TOKEN=$(openssl rand -hex 64)" >> "${DEPLOYMENT_DIR}/.env"
+echo "EXPRESS_TOKEN=$(openssl rand -hex 64)" >>"${DEPLOYMENT_DIR}/.env"
 
 # Build project
 npm install --prefix "${DEPLOYMENT_DIR}"

@@ -8,7 +8,7 @@ const config = {
     // 3 days
     defaultExpire: 259200,
     // Fetch time out in seconds. 0 = infinite
-    fetchTimeout: 0,
+    fetchTimeout: 60,
   },
   redis: {
     queueName: 'thunder-ptm-queue',

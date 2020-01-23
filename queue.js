@@ -102,7 +102,14 @@ const fetch = () => {
   // 2. Get TTL Holder for branch - STRING
   // and Job Data - STRING
   /* eslint no-unused-vars: ["error", { "argsIgnorePattern": "^_" }] */
-    .then(([_, branchTag]) => redis.mget(getBranchTTLHolderKey(branchTag), branchTag))
+    .then((result) => {
+      if (!result) {
+        return Promise.reject(new Error('Fetch wait did timed out.'));
+      }
+
+      const branchTag = result[1];
+      return redis.mget(getBranchTTLHolderKey(branchTag), branchTag);
+    })
     .then(([ttlBranchTag, jobDefinition]) => {
       const jobData = JSON.parse(jobDefinition);
 
@@ -110,8 +117,9 @@ const fetch = () => {
       if (!ttlBranchTag) {
         redis.del(jobData.branchTag);
 
-        // Returns new Promise for fetch
-        return loopResolver();
+        return Promise.reject(
+          new Error(`Job TTL has expired for branchTag: ${jobData.branchTag}.`),
+        );
       }
 
       return new Promise((resolve) => {

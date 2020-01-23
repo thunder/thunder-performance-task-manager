@@ -11,7 +11,7 @@ const { config } = require('./config');
 let shouldTerminate = false;
 process.on('SIGTERM', () => {
   console.log('Worker received SIGTERM!');
-  console.log('It can take several minutes before worker terminates.');
+  console.log('It can take several minutes before the worker terminates.');
 
   shouldTerminate = true;
 });

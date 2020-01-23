@@ -103,7 +103,7 @@ const fetch = () => {
   // and Job Data - STRING
     .then((result) => {
       if (!result) {
-        return Promise.reject(new Error('Fetch wait did timed out.'));
+        return Promise.reject(new Error('Fetch wait timed out.'));
       }
 
       const branchTag = result[1];

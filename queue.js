@@ -117,9 +117,8 @@ const fetch = () => {
       if (!ttlBranchTag) {
         redis.del(jobData.branchTag);
 
-        return Promise.reject(
-          new Error(`Job TTL has expired for branchTag: ${jobData.branchTag}.`),
-        );
+        // Returns new Promise for fetch
+        return loopResolver();
       }
 
       return new Promise((resolve) => {

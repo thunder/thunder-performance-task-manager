@@ -7,6 +7,15 @@ require('dotenv').config();
 // Get config.json
 const { config } = require('./config');
 
+// Graceful termination flag and handling of system signal
+let shouldTerminate = false;
+process.on('SIGTERM', () => {
+  console.log('Worker received SIGTERM!');
+  console.log('It can take several minutes before the worker terminates.');
+
+  shouldTerminate = true;
+});
+
 // Build command for different job types
 function getCommand(jobData) {
   switch (jobData.type) {
@@ -54,8 +63,12 @@ function execCommand(command) {
 }
 
 function loop() {
-  console.log('Worker waiting for job...');
+  if (shouldTerminate) {
+    console.log('Worker stopped!');
+    process.exit();
+  }
 
+  console.log('Worker waiting for job...');
   queue
     .fetch()
     .then(async (jobData) => {

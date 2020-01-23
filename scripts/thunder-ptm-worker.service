@@ -6,6 +6,7 @@ After=network.target
 Restart=always
 User=ubuntu
 Group=ubuntu
+TimeoutStopSec=1200
 Environment=NODE_ENV=production
 Environment=NODE_VERSION=node
 WorkingDirectory=/home/ubuntu/thunder-ptm

@@ -41,3 +41,38 @@ Here is an example with CURL command:
 ```
 curl -X POST -k https://localhost:3000/warmers -H 'Authorization: Bearer 123456' -H 'Content-Type: application/json' -d '{"branchTag": "local-test", "imageTag": "local-test", "composeType": "default"}'
 ```
+
+## How to setup Thunder performance task manager server
+
+**NOTE: This workflow is created on Ubuntu 18.04**
+
+Execute following commands:
+
+```
+# Create Thunder PTM user
+adduser --disabled-password --gecos "Thunder PTM" thunder-ptm
+usermod -aG sudo thunder-ptm
+echo "thunder-ptm ALL=(ALL:ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
+
+# Get Git
+apt-get install --yes git
+
+# Checkout repository
+su - thunder-ptm --command="git clone https://github.com/thunder/thunder-performance-task-manager.git /home/thunder-ptm/thunder-performance-task-manager"
+```
+
+After that change "ELASTIC_APM_URL" to correct Elastic APM server URL in: "/home/thunder-ptm/thunder-performance-task-manager/warmer/docker-compose.default.yml"
+
+After that, you can execute init script with following command:
+
+```
+su - thunder-ptm --command="cd /home/thunder-ptm/thunder-performance-task-manager && bash scripts/server-init.sh"
+```
+
+## Deploying new code
+
+After you deploy new code, you have to restart services and update crontab definitions. You can do that will following command:
+
+```
+bash "${HOME}/thunder-performance-task-manager/scripts/deploy.sh"
+```

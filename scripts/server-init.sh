@@ -2,8 +2,12 @@
 #
 # Init server script
 
+# Define used software versions
+export DOCKER_COMPOSE_VERSION="1.25.3"
+export NVM_VERSION="v0.35.2"
+
 # Deployment directory
-export DEPLOYMENT_DIR="/home/${USER}/thunder-ptm"
+export DEPLOYMENT_DIR="${HOME}/thunder-performance-task-manager"
 
 # Install Docker
 sudo apt-get update
@@ -16,18 +20,21 @@ sudo apt-get install --yes docker-ce
 # Add user to docker group
 sudo groupadd docker
 sudo usermod -aG docker "${USER}"
+sudo usermod -aG systemd-journal "${USER}"
+newgrp docker
 
 # Install docker-compose
-sudo curl -L "https://github.com/docker/compose/releases/download/1.25.0/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
 
 # Install NVM and NodeJS
-curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
-export NVM_DIR="$HOME/.nvm"
+curl -o- "https://raw.githubusercontent.com/nvm-sh/nvm/${NVM_VERSION}/install.sh" | bash
+export NVM_DIR="${HOME}/.nvm"
+# shellcheck source=/dev/null
+[ -s "${NVM_DIR}/nvm.sh" ] && \. "${NVM_DIR}/nvm.sh"
 nvm install --lts node
 
-# Checkout repository
-git clone https://github.com/thunder/thunder-performance-task-manager.git "${DEPLOYMENT_DIR}"
+# Switch to deployed directory
 cd "${DEPLOYMENT_DIR}" || exit
 
 # Add certificates
@@ -49,12 +56,13 @@ echo "EXPRESS_TOKEN=$(openssl rand -hex 64)" >>"${DEPLOYMENT_DIR}/.env"
 # Build project
 npm install --prefix "${DEPLOYMENT_DIR}"
 
-# Set .env for Elastic APM
-cp "${DEPLOYMENT_DIR}/warmer/.env.example" "${DEPLOYMENT_DIR}/warmer/.env"
-
 # Start Redis
 docker run -p 127.0.0.1:6379:6379 --name redis-server -d redis
 
 # Start services
 sudo systemctl start thunder-ptm-worker
 sudo systemctl start thunder-ptm-service
+
+# Create crontab
+echo "2 2 * * * systemd-cat -t \"docker-prune\" bash ${DEPLOYMENT_DIR}/scripts/docker-prune.sh" >"${DEPLOYMENT_DIR}/.crontab"
+crontab "${DEPLOYMENT_DIR}/.crontab"

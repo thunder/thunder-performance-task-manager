@@ -10,18 +10,12 @@ export NVM_VERSION="v0.35.2"
 export DEPLOYMENT_DIR="${HOME}/thunder-performance-task-manager"
 
 # Install Docker
-sudo apt-get update
-sudo apt-get install --yes apt-transport-https ca-certificates curl software-properties-common
+sudo apt update
+sudo apt install --yes apt-transport-https ca-certificates curl software-properties-common
 curl -fsSL https://download.docker.com/linux/ubuntu/gpg | sudo apt-key add -
 sudo add-apt-repository "deb [arch=amd64] https://download.docker.com/linux/ubuntu $(lsb_release -cs) stable"
-sudo apt-get update
-sudo apt-get install --yes docker-ce
-
-# Add user to docker group
-sudo groupadd docker
-sudo usermod -aG docker "${USER}"
-sudo usermod -aG systemd-journal "${USER}"
-newgrp docker
+sudo apt update
+sudo apt install --yes docker-ce
 
 # Install docker-compose
 sudo curl -L "https://github.com/docker/compose/releases/download/${DOCKER_COMPOSE_VERSION}/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
@@ -60,8 +54,8 @@ npm install --prefix "${DEPLOYMENT_DIR}"
 docker run -p 127.0.0.1:6379:6379 --name redis-server -d redis
 
 # Start services
-sudo systemctl start thunder-ptm-worker
-sudo systemctl start thunder-ptm-service
+sudo systemctl restart thunder-ptm-worker
+sudo systemctl restart thunder-ptm-service
 
 # Create crontab
 echo "2 2 * * * systemd-cat -t \"docker-prune\" bash ${DEPLOYMENT_DIR}/scripts/docker-prune.sh" >"${DEPLOYMENT_DIR}/.crontab"

@@ -7,6 +7,7 @@ Restart=always
 User=thunder-ptm
 Group=thunder-ptm
 TimeoutStopSec=1200
+EnvironmentFile=/home/thunder-ptm/worker-service.env
 Environment=NODE_ENV=production
 Environment=NODE_VERSION=node
 WorkingDirectory=/home/thunder-ptm/thunder-performance-task-manager

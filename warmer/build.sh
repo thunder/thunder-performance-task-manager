@@ -66,6 +66,10 @@ fi
 export BRANCH_TAG
 export THUNDER_PERFORMANCE_IMAGE_NAME
 
+# Export environment for docker-compose
+ELASTIC_APM_URL=${ELASTIC_APM_URL:-"http://localhost:8200"}
+export ELASTIC_APM_URL
+
 # Run docker-compose with provided file
 docker-compose --file "${DOCKER_COMPOSE_FILE}" up -d
 

@@ -54,14 +54,24 @@ adduser --disabled-password --gecos "Thunder PTM" thunder-ptm
 usermod -aG sudo thunder-ptm
 echo "thunder-ptm ALL=(ALL:ALL) NOPASSWD: ALL" | tee -a /etc/sudoers
 
+# Create required groups and add thunder-ptm to these groups
+sudo groupadd docker
+usermod -aG docker thunder-ptm
+
+sudo usermod -aG systemd-journal thunder-ptm
+
 # Get Git
-apt-get install --yes git
+apt install --yes git
 
 # Checkout repository
 su - thunder-ptm --command="git clone https://github.com/thunder/thunder-performance-task-manager.git /home/thunder-ptm/thunder-performance-task-manager"
 ```
 
-After that change "ELASTIC_APM_URL" to correct Elastic APM server URL in: "/home/thunder-ptm/thunder-performance-task-manager/warmer/docker-compose.default.yml"
+Set correct `ELASTIC_APM_URL` environment variable in file: `/home/thunder-ptm/worker-service.env`. You can use modified command bellow:
+
+```
+su - thunder-ptm --command="echo ELASTIC_APM_URL=http://localhost:8200 > /home/thunder-ptm/worker-service.env"
+```
 
 After that, you can execute init script with following command:
 

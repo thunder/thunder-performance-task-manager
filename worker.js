@@ -44,29 +44,21 @@ function execCommand(command) {
   console.log('Executing command: ', command);
 
   return new Promise((resolve, reject) => {
-    exec(
-      command,
-      {
-        env: {
-          ELASTIC_APM_URL: process.env.ELASTIC_APM_URL,
-        },
-      },
-      (error, stdout, stderr) => {
-        console.log('Command finished with following output:');
-        console.log('--- stdout ---');
-        console.log(stdout);
-        console.log('--- stderr ---');
-        console.log(stderr);
-        console.log('--- end ---');
+    exec(command, (error, stdout, stderr) => {
+      console.log('Command finished with following output:');
+      console.log('--- stdout ---');
+      console.log(stdout);
+      console.log('--- stderr ---');
+      console.log(stderr);
+      console.log('--- end ---');
 
-        if (error) {
-          console.error(`Command execution error: ${error}`);
-          reject(error);
-        }
+      if (error) {
+        console.error(`Command execution error: ${error}`);
+        reject(error);
+      }
 
-        resolve();
-      },
-    );
+      resolve();
+    });
   });
 }
 

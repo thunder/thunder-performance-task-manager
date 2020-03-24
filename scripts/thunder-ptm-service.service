@@ -4,12 +4,12 @@ After=network.target
 
 [Service]
 Restart=always
-User=ubuntu
-Group=ubuntu
+User=thunder-ptm
+Group=thunder-ptm
 Environment=NODE_ENV=production
 Environment=NODE_VERSION=node
-WorkingDirectory=/home/ubuntu/thunder-ptm
-ExecStart=/home/ubuntu/.nvm/nvm-exec npm run service
+WorkingDirectory=/home/thunder-ptm/thunder-performance-task-manager
+ExecStart=/home/thunder-ptm/.nvm/nvm-exec npm run service
 
 [Install]
 WantedBy=multi-user.target
